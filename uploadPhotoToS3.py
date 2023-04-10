@@ -4,14 +4,8 @@ s3 = boto3.resource('s3')
 
 # Get list of objects for indexing
 images=[
-        # ('image1.jpg','Elon Musk'),
-        # ('image2.jpg','Elon Musk'),
-        # ('image3.jpg','Bill Gates'),
-        # ('image4.jpg','Bill Gates'),
-        # ('image5.jpg','Sundar Pichai'),
-        # ('image6.jpg','Sundar Pichai')
         # ('LouisLi.jpg', 'Louis Li'),
-        ('AbrahamGg.jpg', 'Abraham gg')
+        ('resources/AbrahamGg.jpg', 'Abraham gg')
     ]
 
 # Iterate through list to upload objects to S3  
