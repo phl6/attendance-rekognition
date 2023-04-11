@@ -3,12 +3,13 @@ import time
 import boto3
 import datetime
 
+PHOTO_TAKING_INTERVAL = 3
+
 # initialize the camera
 camera = cv2.VideoCapture(0)
 # initialize s3 client
 s3 = boto3.resource('s3')
 
-PHOTO_TAKING_INTERVAL = 3
 photoSeq = 0
 
 while True:
@@ -17,7 +18,7 @@ while True:
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
         
-        # take photo every 10 sec
+        # take photo by interval
         result, image = camera.read()
         cv2.imshow("Attendance Taking", image)
         photoName = "Photo" + str(photoSeq) + ".png"
