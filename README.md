@@ -8,7 +8,7 @@
 
 3. Install dependencies: ```pip install -r requirement.txt```
 
-4. Set up aws connection: ```aws configure``` [generate AWS access key](https://us-east-1.console.aws.amazon.com/iamv2/home#/security_credentials)
+4. Set up aws connection: ```aws configure``` ([generate AWS access key](https://us-east-1.console.aws.amazon.com/iamv2/home#/security_credentials))
 
 5. Deactivate virtualenv: ```deactivate```
 
@@ -16,10 +16,16 @@
 1. Create S3 Bucket <bucket-name> with <region-name>
 ```shell
 # Syntax:
-$ aws s3api create-bucket --bucket <bucket-name> --region <region-name> --create-bucket-configuration LocationConstraint=<region-name>
+$ aws s3api create-bucket --bucket <bucket-name> \
+--region <region-name> \
+--create-bucket-configuration \
+LocationConstraint=<region-name>
 
 # Example:
-$ aws s3api create-bucket --bucket attendance-records --region ap-southeast-1 --create-bucket-configuration LocationConstraint=ap-southeast-1
+$ aws s3api create-bucket --bucket attendance-records \
+--region ap-southeast-1 \
+--create-bucket-configuration \
+LocationConstraint=ap-southeast-1
 ```
 
 Result: 
@@ -54,8 +60,8 @@ $ aws dynamodb create-table --table-name analystFaces \
 ```
 
 ### Resources
-[AWS Reference](https://aws.amazon.com/blogs/machine-learning/build-your-own-face-recognition-service-using-amazon-rekognition/)
-[DynamoDB Reference](https://blog.awsfundamentals.com/aws-dynamodb-data-types)
-[Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/head_object.html)
+[AWS Reference](https://aws.amazon.com/blogs/machine-learning/build-your-own-face-recognition-service-using-amazon-rekognition/)<br>
+[DynamoDB Reference](https://blog.awsfundamentals.com/aws-dynamodb-data-types)<br>
+[Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/head_object.html)<br>
 
 
