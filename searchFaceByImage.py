@@ -4,13 +4,13 @@ from PIL import Image
 
 DYNAMO_TABLE_NAME = "analystFaces"
 REKOGNITION_COLLECTION_ID = "analystFaces_collection"
-LOCATION = "ap-southeast-1"
+REGION = "ap-southeast-1"
 MAX_FACES = 20
 
-rekognition = boto3.client("rekognition", "ap-southeast-1")
-dynamodb = boto3.client("dynamodb", "ap-southeast-1")
+rekognition = boto3.client("rekognition", REGION)
+dynamodb = boto3.client("dynamodb", REGION)
     
-image = Image.open("./resources/LouisLi2.jpg")
+image = Image.open("./resources/3Faces.jpg")
 stream = io.BytesIO()
 image.save(stream, format = "JPEG")
 image_binary = stream.getvalue()
@@ -22,11 +22,12 @@ try:
             Image = {'Bytes': image_binary},
             MaxFaces = MAX_FACES                     
         )
-    print("response: " + str(len(response['FaceMatches'])))
+    print("response1: " + str(response['FaceMatches']))
+    print("Total matched faces: " + str(len(response['FaceMatches'])))
     print("-------------------------------------------------------------")
     print("Total search face confidence level: " + str(response["SearchedFaceConfidence"]))
     print("-------------------------------------------------------------")
-    
+
     # print out results
     for index, match in enumerate(response['FaceMatches']):
         # find person by faceId(index) in dynamodb
@@ -42,7 +43,7 @@ try:
             
         print ("Details: " + match['Face']['FaceId'], match['Face']['Confidence'])
         print("-------------------------------------------------------------")
-except:
+except rekognition.exceptions.InvalidParameterException:
     print("-------------------------------------------------------------")
     print("No Faces Found")
     print("-------------------------------------------------------------")
