@@ -2,6 +2,8 @@ import cv2
 import time
 import boto3
 import io
+import os
+from dotenv import load_dotenv
 from botocore.exceptions import ClientError
 
 def takePhoto():
@@ -90,17 +92,19 @@ def main():
     cv2.destroyAllWindows()
     
 if __name__ == "__main__":
+    load_dotenv()
+    
     # global config
-    PHOTO_TAKING_INTERVAL = 3
-    MAX_FACES = 10
-    ATTENDANCE_RESULT_PATH = './attendanceSnapshots/'
-
+    PHOTO_TAKING_INTERVAL = os.getenv("PHOTO_TAKING_INTERVAL")
+    MAX_FACES = os.getenv("MAX_FACES")
+    ATTENDANCE_RESULT_PATH = os.getenv("ATTENDANCE_RESULT_PATH")
+    
     # aws configuration
-    ANALYST_BUCKET = "analyst-photos"
-    ATTENDANCE_BUCKET = "attendance-records"
-    DYNAMO_TABLE_NAME = "analystFaces"
-    REKOGNITION_COLLECTION_ID = "analystFaces_collection"
-    REGION = "ap-southeast-1"
+    ANALYST_BUCKET = os.getenv("ANALYST_BUCKET")
+    ATTENDANCE_BUCKET = os.getenv("ATTENDANCE_BUCKET")
+    DYNAMO_TABLE_NAME = os.getenv("DYNAMO_TABLE_NAME")
+    REKOGNITION_COLLECTION_ID = os.getenv("REKOGNITION_COLLECTION_ID")
+    REGION = os.getenv("REGION")
 
     # initialization
     camera = cv2.VideoCapture(0)
