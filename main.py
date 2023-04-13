@@ -7,17 +7,13 @@ from botocore.exceptions import ClientError
 import base64
 
 
-def takePhoto(photoPath):
-    # take photo
-    result, photo = camera.read()
-    # save photo
-    cv2.imwrite(photoPath, photo)
+def takePhoto():
+    result, photo = camera.read()    
     return photo
 
-def convertImageToBytes(photoPath):
-    image = Image.open(photoPath)
-    image.save(stream, format = "JPEG")
-    return stream.getvalue()
+def convertImageToBytes(photo):
+    is_success, im_buf_arr = cv2.imencode(".jpg", photo)
+    return im_buf_arr.tobytes()
 
 def search_faces_by_image(collectionId, image_binary, maxFaces):
     return rekognition.search_faces_by_image(
@@ -36,7 +32,6 @@ def printSummary(timestamp, searchFaceConfidenceLevel, totalDetectedFaces, total
     print("Total search face confidence level: " + str(searchFaceConfidenceLevel))
     print("Total detected faces: " + str(totalDetectedFaces))
     print("Total matches: " + str(totalMatches))
-    print("-------------------------------------------------------------")
 
 def printMatches(matches):
     for index, match in enumerate(matches, start = 1):
@@ -47,6 +42,7 @@ def printMatches(matches):
         )
         
         if 'Item' in face:
+            print("-------------------------------------------------------------") 
             print ("Face " + str(index) + " is recognized as : " + face['Item']['FullName']['S'])
             print ("Matching confidence level: " + str(match['Face']['Confidence']) + "%")
 
@@ -57,29 +53,30 @@ def main():
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
             
-            # take photo by interval
+            # take photo and convert to bytes
             attenadanceTime = time.strftime("%Y%m%d-%H%M%S")
-            photoPath = ATTENDANCE_RESULT_PATH + attenadanceTime + ".jpg"
-            photo = takePhoto(photoPath)
-            time.sleep(PHOTO_TAKING_INTERVAL)
-            image_binary = convertImageToBytes(photoPath)
+            photo = takePhoto()
+            image_bytes = convertImageToBytes(photo)
             
             # detect and match faces
-            response = search_faces_by_image(REKOGNITION_COLLECTION_ID, image_binary, MAX_FACES)
-            totalDetectedFaces = detectTotalFaces(image_binary)
+            response = search_faces_by_image(REKOGNITION_COLLECTION_ID, image_bytes, MAX_FACES)
+            totalDetectedFaces = detectTotalFaces(image_bytes)
             
             # print results
             printSummary(attenadanceTime, response["SearchedFaceConfidence"], totalDetectedFaces, len(response['FaceMatches']))
             printMatches(response['FaceMatches'])
 
-            # TODO: finish upload photo to s3 ATTENDANCE_BUCKET
+            # save photo locally for backup
+            photoPath = ATTENDANCE_RESULT_PATH + attenadanceTime + ".jpg"
+            cv2.imwrite(photoPath, photo)
+
             # upload photo to s3
-            # file = open(photoPath, 'rb')
-            # object = s3.Object(ATTENDANCE_BUCKET, photoPath) # replace bucket-name to destinated bucket name
-            # object.put(Body = file, Metadata = {
-            #     "attenadanceTime": attenadanceTime
-            # })
+            attendanceBucket = s3.Object(ATTENDANCE_BUCKET, attenadanceTime) # replace bucket-name to destinated bucket name
+            attendanceBucket.put(Body = image_bytes, Metadata = {
+                "attenadanceTime": attenadanceTime
+            })
             
+            time.sleep(PHOTO_TAKING_INTERVAL)
         except (KeyboardInterrupt):
             cv2.destroyAllWindow("Bye")
         except ClientError as e:
@@ -93,7 +90,7 @@ def main():
     
 if __name__ == "__main__":
     # global config
-    PHOTO_TAKING_INTERVAL = 3
+    PHOTO_TAKING_INTERVAL = 60
     MAX_FACES = 10
     ATTENDANCE_RESULT_PATH = './attendanceSnapshots/'
 
