@@ -8,21 +8,22 @@ def detect_faces(photo, bucket, region):
     
     session = boto3.Session(profile_name='default', region_name=region)
     client = session.client('rekognition', region_name=region)
+    # Attributes could be DEFAULT or ALL
+    # ref: https://docs.aws.amazon.com/rekognition/latest/APIReference/API_DetectFaces.htmlhttps://docs.aws.amazon.com/rekognition/latest/APIReference/API_DetectFaces.html
+    response = client.detect_faces(Image = {'Bytes': photo}, Attributes=['DEFAULT'])
+    print(response)
+    # for faceDetail in response['FaceDetails']:
+    #     print('The detected face is between ' + str(faceDetail['AgeRange']['Low'])
+    #           + ' and ' + str(faceDetail['AgeRange']['High']) + ' years old')
 
-    response = client.detect_faces(Image = {'Bytes': photo}, Attributes=['ALL'])
+    #     print('Here are the other attributes:')
+    #     print(json.dumps(faceDetail, indent=4, sort_keys=True))
 
-    for faceDetail in response['FaceDetails']:
-        print('The detected face is between ' + str(faceDetail['AgeRange']['Low'])
-              + ' and ' + str(faceDetail['AgeRange']['High']) + ' years old')
-
-        print('Here are the other attributes:')
-        print(json.dumps(faceDetail, indent=4, sort_keys=True))
-
-        # Access predictions for individual face details and print them
-        print("Gender: " + str(faceDetail['Gender']))
-        print("Smile: " + str(faceDetail['Smile']))
-        print("Eyeglasses: " + str(faceDetail['Eyeglasses']))
-        print("Emotions: " + str(faceDetail['Emotions'][0]))
+    #     # Access predictions for individual face details and print them
+    #     print("Gender: " + str(faceDetail['Gender']))
+    #     print("Smile: " + str(faceDetail['Smile']))
+    #     print("Eyeglasses: " + str(faceDetail['Eyeglasses']))
+    #     print("Emotions: " + str(faceDetail['Emotions'][0]))
 
     return len(response['FaceDetails'])
     

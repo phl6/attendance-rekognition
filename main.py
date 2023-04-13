@@ -3,25 +3,8 @@ import time
 import boto3
 import io
 from PIL import Image
-
-
-PHOTO_TAKING_INTERVAL = 3
-MAX_FACES = 10
-ATTENDANCE_RESULT_PATH = './attendanceSnapshots/'
-
-# aws configuration
-ANALYST_BUCKET = "analyst-photos"
-ATTENDANCE_BUCKET = "attendance-records"
-DYNAMO_TABLE_NAME = "analystFaces"
-REKOGNITION_COLLECTION_ID = "analystFaces_collection"
-REGION = "ap-southeast-1"
-
-# initialization
-stream = io.BytesIO()
-camera = cv2.VideoCapture(0)
-s3 = boto3.resource('s3')
-rekognition = boto3.client("rekognition", REGION)
-dynamodb = boto3.client("dynamodb", REGION)
+from botocore.exceptions import ClientError
+import base64
 
 
 def takePhoto(photoPath):
@@ -38,22 +21,25 @@ def convertImageToBytes(photoPath):
 
 def search_faces_by_image(collectionId, image_binary, maxFaces):
     return rekognition.search_faces_by_image(
-            CollectionId = REKOGNITION_COLLECTION_ID,
+            CollectionId = collectionId,
             Image = {'Bytes': image_binary},
             MaxFaces = maxFaces
         )
+    
+def detectTotalFaces(image_binary):
+    response = rekognition.detect_faces(Image = {'Bytes': image_binary}, Attributes=['DEFAULT'])
+    return len(response['FaceDetails'])
 
-# TODO: add detected faces in parameter and print it out
-def printSummary(timestamp, searchFaceConfidenceLevel, totalMatches):
-    print("-------------------------------------------------------------")
+def printSummary(timestamp, searchFaceConfidenceLevel, totalDetectedFaces, totalMatches):
+    print("=============================================================")
     print("Timestamp: " + timestamp)
     print("Total search face confidence level: " + str(searchFaceConfidenceLevel))
-    print("Detected Faces: ")
+    print("Total detected faces: " + str(totalDetectedFaces))
     print("Total matches: " + str(totalMatches))
     print("-------------------------------------------------------------")
 
 def printMatches(matches):
-    for index, match in enumerate(matches):
+    for index, match in enumerate(matches, start = 1):
         # find person by faceId in dynamodb
         face = dynamodb.get_item(
             TableName = DYNAMO_TABLE_NAME,  
@@ -62,7 +48,7 @@ def printMatches(matches):
         
         if 'Item' in face:
             print ("Face " + str(index) + " is recognized as : " + face['Item']['FullName']['S'])
-            print ("Matching confidence level: " + match['Face']['FaceId'], match['Face']['Confidence'] + "%")
+            print ("Matching confidence level: " + str(match['Face']['Confidence']) + "%")
 
 def main():
     while True:
@@ -74,16 +60,16 @@ def main():
             # take photo by interval
             attenadanceTime = time.strftime("%Y%m%d-%H%M%S")
             photoPath = ATTENDANCE_RESULT_PATH + attenadanceTime + ".jpg"
-            takePhoto(photoPath)
+            photo = takePhoto(photoPath)
             time.sleep(PHOTO_TAKING_INTERVAL)
             image_binary = convertImageToBytes(photoPath)
             
-            # search match face(s)
+            # detect and match faces
             response = search_faces_by_image(REKOGNITION_COLLECTION_ID, image_binary, MAX_FACES)
+            totalDetectedFaces = detectTotalFaces(image_binary)
             
-            # TODO: detectingFacesInAnImage.py to be done -> return total number of detected faces
-            
-            printSummary(attenadanceTime, response["SearchedFaceConfidence"], len(response['FaceMatches']))
+            # print results
+            printSummary(attenadanceTime, response["SearchedFaceConfidence"], totalDetectedFaces, len(response['FaceMatches']))
             printMatches(response['FaceMatches'])
 
             # TODO: finish upload photo to s3 ATTENDANCE_BUCKET
@@ -96,15 +82,34 @@ def main():
             
         except (KeyboardInterrupt):
             cv2.destroyAllWindow("Bye")
-        except rekognition.exceptions.InvalidParameterException:
-            # TODO: change it to log or other way to handle no faces situation
-            print("-------------------------------------------------------------")
-            print("No Faces Found")
-            print("-------------------------------------------------------------")
-        
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'InvalidParameterException':
+                printSummary(attenadanceTime, None, 0) 
+            elif e.response['Error']['Code'] == 'InternalServiceError':
+                print("An error occurred on service side:", e)
     # exit program
     camera.release()
     cv2.destroyAllWindows()
     
 if __name__ == "__main__":
+    # global config
+    PHOTO_TAKING_INTERVAL = 3
+    MAX_FACES = 10
+    ATTENDANCE_RESULT_PATH = './attendanceSnapshots/'
+
+    # aws configuration
+    ANALYST_BUCKET = "analyst-photos"
+    ATTENDANCE_BUCKET = "attendance-records"
+    DYNAMO_TABLE_NAME = "analystFaces"
+    REKOGNITION_COLLECTION_ID = "analystFaces_collection"
+    REGION = "ap-southeast-1"
+
+    # initialization
+    camera = cv2.VideoCapture(0)
+    stream = io.BytesIO()
+    s3 = boto3.resource('s3')
+    rekognition = boto3.client("rekognition", REGION)
+    dynamodb = boto3.client("dynamodb", REGION)
+    
+    # program starts
     main()
