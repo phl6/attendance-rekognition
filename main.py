@@ -2,10 +2,7 @@ import cv2
 import time
 import boto3
 import io
-from PIL import Image
 from botocore.exceptions import ClientError
-import base64
-
 
 def takePhoto():
     result, photo = camera.read()    
@@ -23,7 +20,10 @@ def search_faces_by_image(collectionId, image_binary, maxFaces):
         )
     
 def detectTotalFaces(image_binary):
-    response = rekognition.detect_faces(Image = {'Bytes': image_binary}, Attributes=['DEFAULT'])
+    response = rekognition.detect_faces(
+            Image = {'Bytes': image_binary}, 
+            Attributes = ['DEFAULT']
+        )
     return len(response['FaceDetails'])
 
 def printSummary(timestamp, searchFaceConfidenceLevel, totalDetectedFaces, totalMatches):
@@ -44,6 +44,7 @@ def printMatches(matches):
         if 'Item' in face:
             print("-------------------------------------------------------------") 
             print ("Face " + str(index) + " is recognized as : " + face['Item']['FullName']['S'])
+            print ("Similarity: " + str(match['Similarity']) + "%")
             print ("Matching confidence level: " + str(match['Face']['Confidence']) + "%")
 
 def main():
@@ -71,7 +72,7 @@ def main():
             cv2.imwrite(photoPath, photo)
 
             # upload photo to s3
-            attendanceBucket = s3.Object(ATTENDANCE_BUCKET, attenadanceTime) # replace bucket-name to destinated bucket name
+            attendanceBucket = s3.Object(ATTENDANCE_BUCKET, attenadanceTime)
             attendanceBucket.put(Body = image_bytes, Metadata = {
                 "attenadanceTime": attenadanceTime
             })
@@ -81,7 +82,7 @@ def main():
             cv2.destroyAllWindow("Bye")
         except ClientError as e:
             if e.response['Error']['Code'] == 'InvalidParameterException':
-                printSummary(attenadanceTime, None, 0) 
+                printSummary(attenadanceTime, None, totalDetectedFaces, 0) 
             elif e.response['Error']['Code'] == 'InternalServiceError':
                 print("An error occurred on service side:", e)
     # exit program
@@ -90,7 +91,7 @@ def main():
     
 if __name__ == "__main__":
     # global config
-    PHOTO_TAKING_INTERVAL = 60
+    PHOTO_TAKING_INTERVAL = 3
     MAX_FACES = 10
     ATTENDANCE_RESULT_PATH = './attendanceSnapshots/'
 

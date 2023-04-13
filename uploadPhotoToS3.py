@@ -4,7 +4,7 @@ s3 = boto3.resource('s3')
 
 # Get list of objects for indexing
 images=[
-        ('LouisLi.jpg', 'Louis Li')
+        ('LouisLi1.jpg', 'Louis Li')
         # ('LouisLi2.jpg', 'Louis Li-2')
     ]
 

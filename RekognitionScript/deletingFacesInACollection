@@ -19,15 +19,10 @@ def delete_faces_from_collection(collection_id, faces):
 def main():
     REKOGNITION_COLLECTION_ID = "analystFaces_collection"
     faces = [
-        # "25790072-9cb8-4079-bbf3-5ed07b1b2a16",
-        # "4d2ee218-7a6d-4286-88ef-d172adbda619",
-        # "6b137ae4-d44a-4656-87da-8e2b0815e226",
-        # "6d23cbc8-43d1-4d34-a5a7-fb06d9c0cf8a",
-        # "7f70f288-6d5a-4949-98dd-7226e0d94abc",
-        # "9924cca8-c944-4c09-90e1-a617e47b2140",
-        # "997dad27-6d5c-484c-9637-a0bd561781eb",
-        # "a7d55bbf-458b-44cf-91ec-677ec84af396",
-        # "a8ea0328-7d94-43e8-b1fc-8cd8167ebda9"
+        "0b16218c-4257-45cb-974e-e998a9be9b31",
+        "12b6f343-777e-426b-8fcc-f408cc0f23e4",
+        "563d67d7-a985-447b-ab4a-2e52aa40e978",
+        "a2af2b96-b5a8-4b48-9274-a94ac59db0d1"
     ]
     
     faces_count = delete_faces_from_collection(REKOGNITION_COLLECTION_ID, faces)
