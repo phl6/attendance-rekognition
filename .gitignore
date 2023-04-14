@@ -1,2 +1,3 @@
 venv/
-attendanceSnapshots/*
+attendance/records/*
+attendance/snapshots/*
