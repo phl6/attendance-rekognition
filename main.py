@@ -1,4 +1,5 @@
 import cv2
+import csv
 import time
 import boto3
 import io
@@ -28,6 +29,18 @@ def detectTotalFaces(image_binary):
         )
     return len(response['FaceDetails'])
 
+def writeCSV(data):
+    attenadanceDate = time.strftime("%Y-%m-%d")
+    mode = "w" if not os.path.exists("attendanceRecords/" + attenadanceDate + ".csv") else "a"
+    with open("attendanceRecords/" + attenadanceDate + ".csv", mode, encoding="UTF8", newline='') as f:
+        writer = csv.writer(f)
+        if mode == "w":
+            headerRow = ["Timestamp", "Attendee", "Similarity", "Matching Confidence","Height", "Left", "Top", "Width", "FaceId"]
+            writer.writerow(headerRow)
+            writer.writerow(data)
+        else: 
+            writer.writerow(data)
+
 def printSummary(timestamp, searchFaceConfidenceLevel, totalDetectedFaces, totalMatches):
     print("=============================================================")
     print("Timestamp: " + timestamp)
@@ -35,19 +48,30 @@ def printSummary(timestamp, searchFaceConfidenceLevel, totalDetectedFaces, total
     print("Total detected faces: " + str(totalDetectedFaces))
     print("Total matches: " + str(totalMatches))
 
-def printMatches(matches):
+def printMatches(attendanceTime, matches):
     for index, match in enumerate(matches, start = 1):
         # find person by faceId in dynamodb
+        faceId = match["Face"]["FaceId"]
         face = dynamodb.get_item(
             TableName = DYNAMO_TABLE_NAME,  
-            Key={'FaceId': {'S': match['Face']['FaceId']}}
+            Key={'FaceId': {'S': faceId}}
         )
         
-        if 'Item' in face:
+        if "Item" in face:
+            attendeeName = face["Item"]["FullName"]["S"]
+            similarity = match["Similarity"]
+            matchingConfidence = match["Face"]["Confidence"]
+            height = match["Face"]["BoundingBox"]["Height"]
+            left = match["Face"]["BoundingBox"]["Left"]
+            top = match["Face"]["BoundingBox"]["Top"]
+            width = match["Face"]["BoundingBox"]["Width"]
+            data = [attendanceTime, attendeeName, similarity, matchingConfidence, height, left, top, width, faceId]
+            writeCSV(data)
+            
             print("-------------------------------------------------------------") 
-            print ("Face " + str(index) + " is recognized as : " + face['Item']['FullName']['S'])
-            print ("Similarity: " + str(match['Similarity']) + "%")
-            print ("Matching confidence level: " + str(match['Face']['Confidence']) + "%")
+            print ("Face " + str(index) + " is recognized as : " + attendeeName)
+            print ("Similarity: " + str(similarity) + "%")
+            print ("Matching confidence level: " + str(match["Face"]["Confidence"]) + "%")
 
 def main():
     while True:
@@ -57,7 +81,6 @@ def main():
                 break
             
             # take photo and convert to bytes
-            attenadanceTime = time.strftime("%Y%m%d-%H%M%S")
             photo = takePhoto()
             image_bytes = convertImageToBytes(photo)
             
@@ -66,8 +89,9 @@ def main():
             totalDetectedFaces = detectTotalFaces(image_bytes)
             
             # print results
+            attenadanceTime = time.strftime("%Y%m%d-%H%M%S")
             printSummary(attenadanceTime, response["SearchedFaceConfidence"], totalDetectedFaces, len(response['FaceMatches']))
-            printMatches(response['FaceMatches'])
+            printMatches(attenadanceTime, response['FaceMatches'])
 
             # save photo locally for backup
             photoPath = ATTENDANCE_SNAPSHOTS_PATH + attenadanceTime + ".jpg"

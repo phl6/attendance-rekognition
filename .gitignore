@@ -1,3 +1,5 @@
 venv/
 attendance/records/*
+!attendance/records/.keep
 attendance/snapshots/*
+!attendance/snapshots/.keep
