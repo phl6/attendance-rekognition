@@ -70,7 +70,7 @@ def main():
             printMatches(response['FaceMatches'])
 
             # save photo locally for backup
-            photoPath = ATTENDANCE_RESULT_PATH + attenadanceTime + ".jpg"
+            photoPath = ATTENDANCE_SNAPSHOTS_PATH + attenadanceTime + ".jpg"
             cv2.imwrite(photoPath, photo)
 
             # upload photo to s3
@@ -97,7 +97,8 @@ if __name__ == "__main__":
     # global config
     PHOTO_TAKING_INTERVAL = os.getenv("PHOTO_TAKING_INTERVAL")
     MAX_FACES = os.getenv("MAX_FACES")
-    ATTENDANCE_RESULT_PATH = os.getenv("ATTENDANCE_RESULT_PATH")
+    ATTENDANCE_RECORDS_PATH = os.getenv("ATTENDANCE_RECORDS_PATH")
+    ATTENDANCE_SNAPSHOTS_PATH = os.getenv("ATTENDANCE_SNAPSHOTS_PATH")
     
     # aws configuration
     ANALYST_BUCKET = os.getenv("ANALYST_BUCKET")
